@@ -1,0 +1,9 @@
+扬州基地=http://172.17.200.155:8081/japrojecttag/timeseries
+奉贤基地=http://172.20.26.30:8081/japrojecttag/timeseries
+义乌基地=http://172.30.12.128:8081/japrojecttag/timeseries
+曲靖基地=http://172.25.4.77:8081/japrojecttag/timeseries
+合肥基地=http://172.22.7.161:8081/japrojecttag/timeseries
+鄂尔多斯基地=http://10.100.59.1:8081/japrojecttag/timeseries
+包头基地=http://10.160.7.89:8081/japrojecttag/timeseries
+东台基地=http://10.52.11.58:8081/japrojecttag/timeseries
+石家庄基地=http://10.86.6.3:8081/japrojecttag/timeseries
