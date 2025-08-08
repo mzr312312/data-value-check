@@ -5,9 +5,10 @@ import os
 import tkinter as tk
 from tkinter import ttk
 
+
 # 定义输入和输出文件路径
 input_file_path = r".\待拉取的编码和时间戳.xlsx"
-output_dir = r".\outputs"
+output_dir = r"."
 
 # 读取各基地 URL 配置文件
 base_url_file = "各基地url.txt"
@@ -33,8 +34,8 @@ def fetch_and_process_data():
     try:
         # 获取用户选择的时间偏移量
         time_offset = int(time_offset_var.get())
-        if time_offset < 10 or time_offset > 360:
-            raise ValueError("时间偏移量必须在 10 到 360 分钟之间")
+        if time_offset < 10 or time_offset > 120:
+            raise ValueError("时间偏移量必须在 10 到 120 分钟之间")
 
         # 读取输入文件
         df_input = pd.read_excel(input_file_path)
@@ -111,11 +112,29 @@ def fetch_and_process_data():
             else:
                 raise Exception(f"接口请求失败，状态码：{response.status_code}, 响应内容：{response.text}")
 
-        # 存储结果
-        results = []
+        # 定义函数：找到离目标时间戳最近的数据
+        def find_nearest_data(time_series, target_timestamp):
+            # 转换为目标 datetime 对象
+            target_dt = parse_timestamp(target_timestamp)
+
+            if not time_series:
+                return None
+
+            nearest_data = None
+            min_diff = float('inf')
+            for entry in time_series:
+                entry_time = datetime.strptime(entry["time"], "%Y-%m-%d %H:%M:%S")
+                diff = abs((entry_time - target_dt).total_seconds())
+                if diff < min_diff:
+                    min_diff = diff
+                    nearest_data = entry
+            return nearest_data
 
         # 按时间戳分组
         grouped = df_input.groupby("时间戳")
+
+        # 存储结果
+        results = []
 
         # 遍历每组数据
         for timestamp, group in grouped:
@@ -138,14 +157,13 @@ def fetch_and_process_data():
                 tag_code = item["tagCode"]
                 time_series = item.get("timeSeries", [])
 
-                # 直接保存所有 timeSeries 数据，并添加 start_time 和 end_time
-                for entry in time_series:
+                # 找到离目标时间戳最近的数据
+                nearest_data = find_nearest_data(time_series, timestamp)
+                if nearest_data:
                     results.append({
                         "采集点编码": tag_code,
-                        "返回值": entry["tagValue"],
-                        "时间戳": entry["time"],
-                        "请求开始时间": start_time,
-                        "请求结束时间": end_time
+                        "返回值": nearest_data["tagValue"],
+                        "时间戳": nearest_data["time"]
                     })
 
         # 将结果保存到 Excel 文件
@@ -160,6 +178,7 @@ def fetch_and_process_data():
 
     except Exception as e:
         result_label.config(text=f"发生错误：{str(e)}")
+
 
 # 创建 GUI 界面
 root = tk.Tk()
@@ -181,9 +200,9 @@ base_combobox.pack(pady=0.1)
 tk.Label(root, text=f"选择从接口获取IoT数据的时间偏移量（向前/向后，分钟）：\n注意：此项选得太大会导致接口返回缓慢/报错").pack(pady=10)
 
 # 添加时间偏移量下拉框
-time_offset_var = tk.StringVar(value="20")  # 默认值为 20 分钟
+time_offset_var = tk.StringVar(value="20")  # 默认值为 50 分钟
 time_offset_combobox = ttk.Combobox(root, textvariable=time_offset_var, state="readonly")
-time_offset_combobox['values'] = [str(i) for i in range(10, 361, 10)]  # 选项为 10, 20, ..., 360
+time_offset_combobox['values'] = [str(i) for i in range(10, 121, 10)]  # 选项为 10, 20, ..., 120
 time_offset_combobox.pack(pady=0.1)
 
 # 添加按钮
@@ -199,18 +218,18 @@ usage_text = """
 使用说明：
 1.填写“待拉取的编码和时间戳.xlsx”文件，必须有“采集点编码”和“时间戳”两列，列名不能修改；
 2.时间戳可以是以下任意格式：
-yyyy/m/d h:mm:ss （如 2023/12/31 23:59:59）
-yyyy-m-d h:mm:ss （如 2023-12-31 23:59:59）
-yyyy/m/d h:mm （如 2023/12/31 23:59）
-yyyy-m-d h:mm （如 2023-12-31 23:59）
-yyyy/m/d （如 2023/12/31）
-yyyy-m-d （如 2023-12-31）
-yyyymmddhhmmss （如 20231231235959）
-yyyymmddhhmm （如 202312312359）
-yyyy/m/d h:mm:ss.fff （如 2023/12/31 23:59:59.123）
-yyyy-m-d h:mm:ss.fff （如 2023-12-31 23:59:59.456）
-3.此程序会获取指定时间范围内所有 IoT 数据；
-4.输出文件新增两列：“请求开始时间”和“请求结束时间”，用于记录脚本向接口请求的时间范围。
+   - yyyy/m/d h:mm:ss （如 2023/12/31 23:59:59）
+   - yyyy-m-d h:mm:ss （如 2023-12-31 23:59:59）
+   - yyyy/m/d h:mm （如 2023/12/31 23:59）
+   - yyyy-m-d h:mm （如 2023-12-31 23:59）
+   - yyyy/m/d （如 2023/12/31）
+   - yyyy-m-d （如 2023-12-31）
+   - yyyymmddhhmmss （如 20231231235959）
+   - yyyymmddhhmm （如 202312312359）
+   - yyyy/m/d h:mm:ss.fff （如 2023/12/31 23:59:59.123）
+   - yyyy-m-d h:mm:ss.fff （如 2023-12-31 23:59:59.456）
+3.此程序会找到距离目标时间戳最近的IoT值（范围：指定前后偏移量），后续与基地抄表值进行比对；
+4.如果某个采集点没有数据，则不会出现在输出文件中；
 """
 usage_label = tk.Label(root, text=usage_text, wraplength=700, justify="left", anchor="w", font=("Arial", 10))
 usage_label.pack(pady=1, fill=tk.X)
