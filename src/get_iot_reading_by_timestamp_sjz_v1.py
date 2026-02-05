@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import os
 import tkinter as tk
 from tkinter import ttk
-
+# 是石家庄基地V1版本API采集用的脚本，单独给王云峰打包。和主程序不一致的点在于：159行的timeseries，在主程序里叫timeSeries，这是由于新/旧接口的字段不一致导致的
 
 # 定义输入和输出文件路径
 input_file_path = r".\待拉取的编码和时间戳.xlsx"
@@ -155,7 +155,7 @@ def fetch_and_process_data():
 
             for item in response_data["data"]:
                 tag_code = item["tagCode"]
-                time_series = item.get("timeSeries", [])
+                time_series = item.get("timeseries", [])
 
                 # 找到离目标时间戳最近的数据
                 nearest_data = find_nearest_data(time_series, timestamp)

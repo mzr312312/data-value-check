@@ -4,14 +4,14 @@ from datetime import datetime, timedelta
 import os
 import tkinter as tk
 from tkinter import ttk
-# 是石家庄基地V1版本API采集用的脚本，单独给王云峰打包。和主程序不一致的点在于：159行的timeseries，在主程序里叫timeSeries
+
 
 # 定义输入和输出文件路径
-input_file_path = r".\待拉取的编码和时间戳.xlsx"
+input_file_path = r".\target_tags.xlsx"
 output_dir = r"."
 
 # 读取各基地 URL 配置文件
-base_url_file = "各基地url.txt"
+base_url_file = "base_urls.txt"
 if not os.path.exists(base_url_file):
     raise FileNotFoundError(f"未找到配置文件：{base_url_file}")
 
@@ -155,7 +155,7 @@ def fetch_and_process_data():
 
             for item in response_data["data"]:
                 tag_code = item["tagCode"]
-                time_series = item.get("timeseries", [])
+                time_series = item.get("timeSeries", [])
 
                 # 找到离目标时间戳最近的数据
                 nearest_data = find_nearest_data(time_series, timestamp)
@@ -216,7 +216,7 @@ result_label.pack(pady=1)
 # 添加使用说明文字
 usage_text = """
 使用说明：
-1.填写“待拉取的编码和时间戳.xlsx”文件，必须有“采集点编码”和“时间戳”两列，列名不能修改；
+1.填写“target_tags.xlsx”文件，必须有“采集点编码”和“时间戳”两列，列名不能修改；
 2.时间戳可以是以下任意格式：
    - yyyy/m/d h:mm:ss （如 2023/12/31 23:59:59）
    - yyyy-m-d h:mm:ss （如 2023-12-31 23:59:59）
